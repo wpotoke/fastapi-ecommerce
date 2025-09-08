@@ -1,0 +1,22 @@
+repos:
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.12.11
+    hooks:
+      - id: ruff
+        exclude: .*/migrations/.*
+
+  - repo: https://github.com/psf/black
+    rev: 25.1.0
+    hooks:
+      - id: black
+        exclude: .*/migrations/.*
+        
+  - repo: local
+    hooks:
+      - id: pylint
+        name: pylint-fastapi
+        entry: pylint
+        language: system
+        types: [python]
+        exclude: .*/migrations/.*
+        args: [--rcfile=.pylintrc]
