@@ -1,0 +1,15 @@
+.env
+.vscode
+*.pyc
+cache/
+media
+venv
+__pycache__/
+.coverage
+htmlcov/
+.pytest_cache/
+.cache/
+.mypy_cache/
+.ruff_cache/
+db.sqlite3
+replace-rules.txt
