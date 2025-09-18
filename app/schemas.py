@@ -1,3 +1,4 @@
+from datetime import datetime
 from typing import Annotated
 from pydantic import BaseModel, Field, ConfigDict, EmailStr
 
@@ -65,6 +66,7 @@ class Product(BaseModel):
     image_url: Annotated[
         str | None, Field(None, max_length=200, description="URL изображения товара")
     ]
+    rating: Annotated[float, Field(description="Рейтинг отзывов о товаре")]
     stock: Annotated[int, Field(ge=0, description="Колличество товара на складе")]
     category_id: Annotated[
         int, Field(description="ID категории, к которой относится товар")
@@ -83,8 +85,8 @@ class UserCreate(BaseModel):
         str,
         Field(
             default="buyer",
-            pattern="^(buyer|seller)$",
-            description="Роль: 'buyer' или 'seller'",
+            pattern="^(buyer|seller|admin)$",
+            description="Роль: 'buyer' или 'seller' или 'admin'",
         ),
     ]
 
@@ -94,4 +96,28 @@ class User(BaseModel):
     email: EmailStr
     is_active: bool
     role: str
+    model_config = ConfigDict(from_attributes=True)
+
+
+class ReviewCreate(BaseModel):
+    product_id: Annotated[
+        int, Field(description="ID продукта к которому относится отзыв")
+    ]
+    comment: Annotated[str | None, Field(description="Коментарий к отзыву")]
+    grade: Annotated[int, Field(ge=1, le=5, description="Оценка")]
+
+
+class Review(BaseModel):
+    id: Annotated[int, Field(description="Уникальный инентификатор товара")]
+    user_id: Annotated[int, Field(description="ID пользователя который написал отзыв")]
+    product_id: Annotated[
+        int, Field(description="ID продукта к которому относится отзыв")
+    ]
+    comment: Annotated[
+        str | None, Field(default=None, description="Коментарий к отзыву")
+    ]
+    comment_date: Annotated[datetime, Field(description="Дата и время")]
+    grade: Annotated[int, Field(ge=1, le=5, description="Оценка")]
+    is_active: Annotated[bool, Field(description="Активность отзыва")]
+
     model_config = ConfigDict(from_attributes=True)
