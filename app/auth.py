@@ -8,7 +8,12 @@ from sqlalchemy import select
 import jwt
 
 from app.models.users import User as UserModel
-from app.config import SECRET_KEY, ALGORITHM, ACCESS_TOKEN_EXPIRE_MINUTES
+from app.config import (
+    SECRET_KEY,
+    ALGORITHM,
+    ACCESS_TOKEN_EXPIRE_MINUTES,
+    REFRESH_TOKEN_EXPIRE_DAYS,
+)
 from app.dependencies.db import get_async_db
 
 
@@ -39,6 +44,16 @@ def create_access_token(data: dict):
     expire = datetime.now(timezone.utc) + timedelta(
         minutes=int(ACCESS_TOKEN_EXPIRE_MINUTES)
     )
+    to_encode.update({"exp": expire})
+    return jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
+
+
+def create_refresh_token(data: dict):
+    """
+    Создаёт рефреш-токен с длительным сроком действия.
+    """
+    to_encode = data.copy()
+    expire = datetime.now(timezone.utc) + timedelta(days=int(REFRESH_TOKEN_EXPIRE_DAYS))
     to_encode.update({"exp": expire})
     return jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
 
@@ -84,5 +99,29 @@ async def get_current_seller(current_user: UserModel = Depends(get_current_user)
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Only sellers can perform this action",
+        )
+    return current_user
+
+
+async def get_current_buyer(current_user: UserModel = Depends(get_current_user)):
+    """
+    Проверяет, что пользователь имеет роль 'buyer'.
+    """
+    if current_user.role != "buyer":
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Only buyer can perform this action",
+        )
+    return current_user
+
+
+async def get_admin(current_user: UserModel = Depends(get_current_user)):
+    """
+    Проверяет, что пользователь имеет роль 'admin'.
+    """
+    if current_user.role != "admin":
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Only admin can perform this action",
         )
     return current_user
