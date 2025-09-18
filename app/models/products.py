@@ -1,6 +1,6 @@
 # ruff: noqa: F821
 from sqlalchemy.orm import Mapped, mapped_column, relationship
-from sqlalchemy import String, Boolean, Integer, Float, ForeignKey
+from sqlalchemy import String, Boolean, Integer, Float, ForeignKey, Numeric
 from app.database import Base
 
 
@@ -17,8 +17,12 @@ class Product(Base):
     category_id: Mapped[int] = mapped_column(
         Integer, ForeignKey("categories.id"), nullable=False
     )
+    rating: Mapped[float] = mapped_column(Numeric(5, 2), default=0.0, nullable=False)
     seller_id: Mapped[str] = mapped_column(ForeignKey("users.id"), nullable=False)
     category: Mapped["Category"] = relationship(
         "Category", back_populates="products"
     )  # ignore
-    seller = relationship("User", back_populates="products")
+    seller: Mapped["User"] = relationship("User", back_populates="products")
+    reviews: Mapped[list["Review"]] = relationship(
+        "Review", back_populates="product", uselist=True
+    )
