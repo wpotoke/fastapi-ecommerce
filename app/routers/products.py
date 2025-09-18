@@ -7,8 +7,10 @@ from sqlalchemy import select, update
 
 from app.models.products import Product as ProductModel
 from app.models.categories import Category as CategoryModel
+from app.models.users import User as UserModel
 from app.schemas import Product as ProductSchema, ProductCreate
 from app.dependencies.db import get_async_db
+from app.auth import get_current_seller
 
 router = APIRouter(prefix="/products", tags=["products"])
 
@@ -25,7 +27,9 @@ async def get_products(db: AsyncSession = Depends(get_async_db)):
 
 @router.post("/", response_model=ProductSchema, status_code=status.HTTP_201_CREATED)
 async def create_product(
-    product_create: ProductCreate, db: AsyncSession = Depends(get_async_db)
+    product_create: ProductCreate,
+    db: AsyncSession = Depends(get_async_db),
+    current_user: UserModel = Depends(get_current_seller),
 ):
     """Создает новый товар."""
     if product_create.category_id is not None:
@@ -40,7 +44,7 @@ async def create_product(
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail=f"Категории с ID {product_create.category_id} не существует",
             )
-    product = ProductModel(**product_create.model_dump())
+    product = ProductModel(**product_create.model_dump(), seller_id=current_user.id)
     db.add(product)
     await db.commit()
     await db.refresh(product)
@@ -119,6 +123,7 @@ async def update_product(
     product_id: Annotated[int, Path(..., ge=1)],
     product_update: ProductCreate,
     db: AsyncSession = Depends(get_async_db),
+    current_user: UserModel = Depends(get_current_seller),
 ):
     """Обновляет товар по ID."""
     stmt = select(ProductModel).where(
@@ -130,6 +135,11 @@ async def update_product(
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail=f"Продукта с ID {product_id} не существует",
+        )
+    if product.seller_id != current_user.id:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="You can only update your own products",
         )
     if product.category_id is not None:
         stmt = select(CategoryModel).where(
@@ -149,6 +159,7 @@ async def update_product(
         .values(**product_update.model_dump())
     )
     await db.commit()
+    await db.refresh(product)
     return product
 
 
@@ -156,6 +167,7 @@ async def update_product(
 async def delete_product(
     product_id: Annotated[int, Path(..., ge=1)],
     db: AsyncSession = Depends(get_async_db),
+    current_user: UserModel = Depends(get_current_seller),
 ):
     """Удаляет продукт по ID."""
     stmt = select(ProductModel).where(
@@ -167,6 +179,11 @@ async def delete_product(
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail=f"Продукта с ID {product_id} не существует",
+        )
+    if product.seller_id != current_user.id:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="You can only delete your own products",
         )
     if product.category_id is not None:
         stmt = select(CategoryModel).where(
@@ -185,5 +202,6 @@ async def delete_product(
         .values(is_active=False)
     )
     await db.commit()
+    await db.refresh(product)
 
     return {"status": "success ✅", "message": "Product marked as inactive"}
