@@ -1,16 +1,39 @@
+# Environment
 .env
 .vscode
-*.pyc
-*.db
-cache/
-media
 venv
+
+# Python compiled
+*.pyc
 __pycache__/
-.coverage
-htmlcov/
-.pytest_cache/
 .cache/
 .mypy_cache/
 .ruff_cache/
+
+# Database files
+*.db
 db.sqlite3
+*.rdb
+*.aof
+
+# App directories
+cache/
+media/
+
+# Test and coverage
+.coverage
+htmlcov/
+.pytest_cache/
+
+# Celery
+celerybeat-schedule*
+celerybeat.pid
+*.bak
+*.dat
+*.dir
+
+# Logs
+*.log
+
+# Misc
 replace-rules.txt
