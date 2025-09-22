@@ -13,7 +13,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from app.routers import categories, products, users, reviews
 from app.task import call_background_task
-
+from app.config import REDIS_HOST, REDIS_PORT
 
 logger.add(
     sys.stdout,
@@ -26,8 +26,8 @@ logger.add(
 
 celery = Celery(
     __name__,
-    broker="redis://127.0.0.1:6379/0",
-    backend="redis://127.0.0.1:6379/0",
+    broker=f"redis://{REDIS_HOST}:{REDIS_PORT}/0",
+    backend=f"redis://{REDIS_HOST}:{REDIS_PORT}/0",
     broker_connection_retry_on_startup=True,
 )
 
