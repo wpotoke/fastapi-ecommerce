@@ -1,0 +1,80 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+ENV/
+env.bak/
+venv.bak/
+pip-log.txt
+pip-delete-this-directory.txt
+
+# Docker
+Dockerfile
+.dockerignore
+docker-compose.yml
+docker-compose.*.yml
+
+# Git
+.git/
+.gitignore
+.gitattributes
+.gitmodules
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.nova/
+
+# Логи и кеши
+logs/
+*.log
+.npm/
+.pnpm/
+.pytest_cache/
+.coverage
+.coverage.*
+htmlcov/
+.cache/
+
+# Дистрибутивы и сборки
+dist/
+build/
+*.egg-info/
+*.egg
+.tox/
+
+# Тесты и временные файлы  
+tests/
+test/
+tmp/
+temp/
+*.tmp
+*.temp
+
+# Environment variables
+.env
+.env.*
+
+# Секреты и конфиги
+secrets/
+keys/
+certificates/
+*.key
+*.pem
+*.crt
+
+# Документация
+docs/
+*.md
+*.rst
+
+# Прочее
+.ds_store
+thumbs.db
