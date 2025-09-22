@@ -1,0 +1,79 @@
+services:
+  web:
+    build:
+      context: .
+      dockerfile: ./app/Dockerfile
+    command: uvicorn app.main:app --host 0.0.0.0 --port 8000
+    ports:
+      - 8000:8000
+    env_file:
+      - .env
+    environment:
+      - REDIS_PORT=${REDIS_PORT}
+      - REDIS_HOST=redis
+      - SECRET_KEY=${SECRET_KEY}
+      - SQLITE_DATABASE_URL=${SQLITE_DATABASE_URL}
+      - ALGORITHM=${ALGORITHM}
+      - ACCESS_TOKEN_EXPIRE_MINUTES=${ACCESS_TOKEN_EXPIRE_MINUTES}
+      - REFRESH_TOKEN_EXPIRE_DAYS=${REFRESH_TOKEN_EXPIRE_DAYS}
+    depends_on:
+      - redis
+      - db
+    volumes:
+      - .:/home/fast
+  db:
+    image: postgres:16
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    env_file:
+      - .env
+    environment:
+      - POSTGRES_USER=${POSTGRES_USER}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+      - POSTGRES_DB=${POSTGRES_DB}
+    ports:
+      - "5432:5432"
+  redis:
+    image: redis:7.2-alpine
+    container_name: redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    command: ["redis-server", "--appendonly", "yes"]
+  celery_worker:
+    build:
+      context: .
+      dockerfile: ./app/Dockerfile
+    command: python -m celery -A app.main.celery worker --loglevel=info -P gevent
+    env_file:
+      - .env
+    environment:
+      - REDIS_PORT=${REDIS_PORT}
+      - REDIS_HOST=redis
+    depends_on:
+      - redis
+      - web
+    volumes:
+      - .:/home/fast
+  celery_beat:
+    build:
+      context: .
+      dockerfile: ./app/Dockerfile
+    command: python -m celery -A app.main.celery beat --loglevel=info
+    env_file:
+      - .env
+    environment:
+      - REDIS_PORT=${REDIS_PORT}
+      - REDIS_HOST=redis
+    depends_on:
+      - redis
+      - web
+    volumes:
+      - .:/home/fast
+
+
+volumes:
+  postgres_data:
+  redis_data:
+   
