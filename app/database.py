@@ -7,7 +7,12 @@ from dotenv import load_dotenv
 load_dotenv()
 
 SQLITE_DATABASE_URL = os.getenv("SQLITE_DATABASE_URL")
-DATABASE_URL = os.getenv("DATABASE_URL")
+
+user = os.getenv("POSTGRES_USER")
+password = os.getenv("POSTGRES_PASSWORD")
+db_name = os.getenv("POSTGRES_DB")
+
+DATABASE_URL = f"postgresql+asyncpg://{user}:{password}@localhost:5432/{db_name}"
 
 # Синхронное подключение
 engine = create_engine(SQLITE_DATABASE_URL, echo=True)
