@@ -47,6 +47,7 @@ prometheus_client==0.23.1
 prompt_toolkit==3.0.52
 pycparser==2.23
 pydantic==2.11.7
+pydantic-settings==2.11.0
 pydantic_core==2.33.2
 PyJWT==2.10.1
 pylint==3.3.8

@@ -1,11 +1,26 @@
-import os
-from dotenv import load_dotenv
+from functools import lru_cache
+from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
-load_dotenv()
-SECRET_KEY = os.getenv("SECRET_KEY")
-ALGORITHM = os.getenv("ALGORITHM")
-ACCESS_TOKEN_EXPIRE_MINUTES = os.getenv("ACCESS_TOKEN_EXPIRE_MINUTES")
-REFRESH_TOKEN_EXPIRE_DAYS = os.getenv("REFRESH_TOKEN_EXPIRE_DAYS")
-REDIS_HOST = os.getenv("REDIS_HOST")
-REDIS_PORT = str(os.getenv("REDIS_PORT"))
+class Settings(BaseSettings):
+    SQLITE_DATABASE_URL: str = "sqlite:///ecommerce.db"
+    DATABASE_URL: str
+    SECRET_KEY: str
+    POSTGRES_USER: str
+    POSTGRES_PASSWORD: str
+    POSTGRES_DB: str
+    ALGORITHM: str
+    ACCESS_TOKEN_EXPIRE_MINUTES: int
+    REFRESH_TOKEN_EXPIRE_DAYS: int
+    REDIS_HOST: str
+    REDIS_PORT: int
+
+    model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8")
+
+
+@lru_cache()
+def get_settings() -> Settings:
+    return Settings()
+
+
+settings = get_settings()

@@ -16,7 +16,7 @@ from app.auth import (
     create_access_token,
     create_refresh_token,
 )
-from app.config import SECRET_KEY, ALGORITHM
+from app.config import settings
 
 router = APIRouter(prefix="/users", tags=["users"])
 
@@ -87,7 +87,9 @@ async def update_access_token(
         headers={"WWW-Authenticate": "Bearer"},
     )
     try:
-        payload = jwt.decode(refresh_token, SECRET_KEY, algorithms=[ALGORITHM])
+        payload = jwt.decode(
+            refresh_token, settings.SECRET_KEY, algorithms=[settings.ALGORITHM]
+        )
         email = payload.get("sub")
         if email is None:
             raise credentials_exception

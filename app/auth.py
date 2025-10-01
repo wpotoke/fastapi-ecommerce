@@ -8,12 +8,7 @@ from sqlalchemy import select
 import jwt
 
 from app.models.users import User as UserModel
-from app.config import (
-    SECRET_KEY,
-    ALGORITHM,
-    ACCESS_TOKEN_EXPIRE_MINUTES,
-    REFRESH_TOKEN_EXPIRE_DAYS,
-)
+from app.config import settings
 from app.dependencies.db import get_async_db
 
 
@@ -42,10 +37,10 @@ def create_access_token(data: dict):
     """
     to_encode = data.copy()
     expire = datetime.now(timezone.utc) + timedelta(
-        minutes=int(ACCESS_TOKEN_EXPIRE_MINUTES)
+        minutes=int(settings.ACCESS_TOKEN_EXPIRE_MINUTES)
     )
     to_encode.update({"exp": expire})
-    return jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
+    return jwt.encode(to_encode, settings.SECRET_KEY, algorithm=settings.ALGORITHM)
 
 
 def create_refresh_token(data: dict):
@@ -53,9 +48,11 @@ def create_refresh_token(data: dict):
     Создаёт рефреш-токен с длительным сроком действия.
     """
     to_encode = data.copy()
-    expire = datetime.now(timezone.utc) + timedelta(days=int(REFRESH_TOKEN_EXPIRE_DAYS))
+    expire = datetime.now(timezone.utc) + timedelta(
+        days=int(settings.REFRESH_TOKEN_EXPIRE_DAYS)
+    )
     to_encode.update({"exp": expire})
-    return jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
+    return jwt.encode(to_encode, settings.SECRET_KEY, algorithm=settings.ALGORITHM)
 
 
 async def get_current_user(
@@ -70,7 +67,9 @@ async def get_current_user(
         headers={"WWW-Authenticate": "Bearer"},
     )
     try:
-        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+        payload = jwt.decode(
+            token, settings.SECRET_KEY, algorithms=[settings.ALGORITHM]
+        )
         email: str = payload.get("sub")
         if email is None:
             raise credential_exception
