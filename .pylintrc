@@ -2,6 +2,7 @@
 ignore=venv
 jobs=1
 persistent=yes
+ignore=app/migrations
 
 [MESSAGES CONTROL]
 disable =
