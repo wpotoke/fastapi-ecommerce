@@ -7,28 +7,15 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 import jwt
 
-from app.models.users import User as UserModel
-from app.config import settings
-from app.dependencies.db import get_async_db
-
+from app.modules.users.models import User as UserModel
+from app.core.config import settings
+from app.core.dependencies import get_async_db
+from app.modules.users.crud import crud_get_user_by_email
+from app.modules.users.utils import verify_password
 
 # Создаём контекст для хеширования с использованием bcrypt
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="users/token")
-
-
-def hash_password(password: str) -> str:
-    """
-    Преобразует пароль в хеш с использованием bcrypt.
-    """
-    return pwd_context.hash(password)
-
-
-def verify_password(plain_password: str, hashed_password: str) -> bool:
-    """
-    Проверяет, соответствует ли введённый пароль сохранённому хешу.
-    """
-    return pwd_context.verify(plain_password, hashed_password)
 
 
 def create_access_token(data: dict):
@@ -123,4 +110,45 @@ async def get_admin(current_user: UserModel = Depends(get_current_user)):
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Only admin can perform this action",
         )
-    return current_user
+
+
+async def refresh_access_token_service(refresh_token: str, db: AsyncSession):
+    """Обновляет access token"""
+    credentials_exception = HTTPException(
+        status_code=status.HTTP_401_UNAUTHORIZED,
+        detail="Could not validate refresh token",
+        headers={"WWW-Authenticate": "Bearer"},
+    )
+
+    try:
+        payload = jwt.decode(
+            refresh_token, settings.SECRET_KEY, algorithms=[settings.ALGORITHM]
+        )
+        email = payload.get("sub")
+        if email is None:
+            raise credentials_exception
+    except jwt.PyJWTError as e:
+        raise credentials_exception from e
+
+    user = await crud_get_user_by_email(email, db)
+    if user is None:
+        raise credentials_exception
+
+    access_token = create_access_token(
+        data={"sub": user.email, "role": user.role, "id": user.id}
+    )
+
+    return {"access_token": access_token, "token_type": "bearer"}
+
+
+async def authenticate_user(email: str, password: str, db: AsyncSession):
+    """Аутентифицирует пользователя"""
+    user = await crud_get_user_by_email(email, db)
+
+    if not user or not verify_password(password, user.hashed_password):
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Incorrect email or password",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+    return user

@@ -1,7 +1,7 @@
 # ruff: noqa: F821
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from sqlalchemy import String, Boolean, Integer, Float, ForeignKey, Numeric
-from app.database import Base
+from app.core.database import Base
 
 
 class Product(Base):

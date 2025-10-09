@@ -4,6 +4,10 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 
 class Settings(BaseSettings):
     SQLITE_DATABASE_URL: str = "sqlite:///ecommerce.db"
+    MAX_FILE_SIZE_MB: int = 5
+    MAX_FILE_SIZE_BYTES: int = MAX_FILE_SIZE_MB * 1024 * 1024
+    ALLOWED_IMAGE_MIME_TYPES: list[str] = ["image/jpeg", "image/png"]
+    ALLOWED_FILE_EXTENSIONS: list[str] = [".jpg", ".jpeg", ".png"]
     DATABASE_URL: str
     SECRET_KEY: str
     POSTGRES_USER: str
@@ -21,6 +25,12 @@ class Settings(BaseSettings):
 @lru_cache()
 def get_settings() -> Settings:
     return Settings()
+
+
+def reload_settings() -> Settings:
+    """Очищает кэш и возвращает обновлённые настройки."""
+    get_settings.cache_clear()
+    return get_settings()
 
 
 settings = get_settings()

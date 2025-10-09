@@ -3,9 +3,9 @@
 from fastapi import Depends
 from sqlalchemy import select, update, func
 from sqlalchemy.ext.asyncio import AsyncSession
-from app.dependencies.db import get_async_db
-from app.models.reviews import Review as ReviewModel
-from app.models.products import Product as ProductModel
+from app.core.dependencies import get_async_db
+from app.modules.reviews.models import Review as ReviewModel
+from app.modules.products.models import Product as ProductModel
 
 
 async def update_rating(review: ReviewModel, db: AsyncSession = Depends(get_async_db)):

@@ -2,12 +2,17 @@
 # pylint: disable=duplicate-code
 from typing import Annotated
 from fastapi import APIRouter, Depends, HTTPException, status, Path
-from sqlalchemy import select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.models import Category as CategoryModel
-from app.schemas import Category as CategorySchema, CategoryCreate
-from app.dependencies.db import get_async_db
+from app.modules.categories.schemas import Category as CategorySchema, CategoryCreate
+from app.core.dependencies import get_async_db
+from app.modules.categories.crud import (
+    crud_get_categories,
+    crud_get_category,
+    crud_create_category,
+    crud_update_category,
+    crud_delete_category,
+)
 
 router = APIRouter(prefix="/categories", tags=["categories"])
 
@@ -15,11 +20,23 @@ router = APIRouter(prefix="/categories", tags=["categories"])
 @router.get("/", response_model=list[CategorySchema], status_code=status.HTTP_200_OK)
 async def get_categories(db: AsyncSession = Depends(get_async_db)):
     """Возвращает список всех категорий товаров."""
-    result = await db.scalars(
-        select(CategoryModel).where(CategoryModel.is_active == True)
-    )
-    categories = result.all()
-    return categories
+    categories_db = await crud_get_categories(db)
+    return categories_db
+
+
+@router.get(
+    "/{category_id}", response_model=CategorySchema, status_code=status.HTTP_200_OK
+)
+async def get_category(
+    category_id: Annotated[int, Path(ge=1)], db: AsyncSession = Depends(get_async_db)
+):
+    """Возвращает список всех категорий товаров."""
+    category = await crud_get_category(category_id, db)
+    if not category:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Category not found"
+        )
+    return category
 
 
 @router.post("/", response_model=CategorySchema, status_code=status.HTTP_201_CREATED)
@@ -28,22 +45,15 @@ async def create_category(
 ):
     """Создает новую категорию."""
     if category_create.parent_id is not None:
-        stmt = select(CategoryModel).where(
-            CategoryModel.id == category_create.parent_id,
-            CategoryModel.is_active == True,
-        )
-        result = await db.scalars(stmt)
-        parent = result.first()
+        parent = await crud_get_category(category_create.id, db)
         if parent is None:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail="Parent category not found",
             )
 
-    category = CategoryModel(**category_create.model_dump())
-    db.add(category)
-    await db.commit()
-    return category
+    category_db = await crud_create_category(category_create, db)
+    return category_db
 
 
 @router.put(
@@ -55,36 +65,22 @@ async def update_category(
     db: AsyncSession = Depends(get_async_db),
 ):
     """Обновляет новую категорию по ее ID."""
-    stmt = select(CategoryModel).where(
-        CategoryModel.id == category_id, CategoryModel.is_active == True
-    )
-    result = await db.scalars(stmt)
-    category = result.first()
+    category = await crud_get_category(category_id, db)
     if not category:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Category not found",
         )
 
-    if category.parent_id is not None:
-        stmt = select(CategoryModel).where(
-            CategoryModel.parent_id == category.parent_id,
-            CategoryModel.is_active == True,
-        )
-        result = await db.scalars(stmt)
-        parent = result.first()
+    if category_update.parent_id is not None:
+        parent = await crud_get_category(category_update.parent_id, db)
         if parent is None:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail="Parent category not found",
             )
-    await db.execute(
-        update(CategoryModel)
-        .where(CategoryModel.id == category_id)
-        .values(**category_update.model_dump())
-    )
-    await db.commit()
-    return category
+    category_db = await crud_update_category(category_id, category_update, db)
+    return category_db
 
 
 @router.delete("/{category_id}", status_code=status.HTTP_200_OK)
@@ -93,21 +89,14 @@ async def delete_category(
     db: AsyncSession = Depends(get_async_db),
 ):
     """Удаляет категорию по ее ID."""
-    stmt = select(CategoryModel).where(
-        CategoryModel.id == category_id, CategoryModel.is_active == True
-    )
-    result = await db.scalars(stmt)
-    category = result.first()
+    category = await crud_get_category(category_id, db)
     if category is None:
         raise HTTPException(
             status.HTTP_404_NOT_FOUND,
             detail=f"Категории с ID {category_id} не существует",
         )
-    await db.execute(
-        update(CategoryModel)
-        .where(CategoryModel.id == category_id)
-        .values(is_active=False)
-    )
-    await db.commit()
+    success = await crud_delete_category(category_id, db)
 
-    return {"status": "success", "message": "Category marked as inactive"}
+    if success:
+        return {"status": "success", "message": "Category marked as inactive"}
+    return {"status": "error", "message": "Don't access marked category as inactive"}
