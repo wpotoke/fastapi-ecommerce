@@ -1,8 +1,7 @@
 [MASTER]
-ignore=venv
+ignore=venv,app/migrations
 jobs=1
 persistent=yes
-ignore=app/migrations
 
 [MESSAGES CONTROL]
 disable =
