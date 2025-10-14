@@ -15,7 +15,7 @@ from fastapi import FastAPI, Request, File, UploadFile, HTTPException, status, P
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse, FileResponse, StreamingResponse
 from fastapi.staticfiles import StaticFiles
-from app.modules import categories, products, reviews, users
+from app.api import category_router, product_router, review_router, user_router
 from app.task import call_background_task
 from app.core.config import settings
 
@@ -88,10 +88,10 @@ async def timing_middleware(request: Request, call_next):
 # app.add_middleware(TrustedHostMiddleware, allow_hosts=["http://127.0.0.1:8000"])
 # app.add_middleware(HTTPSRedirectMiddleware)
 
-app.include_router(categories.routers.router)
-app.include_router(products.routers.router)
-app.include_router(reviews.routers.router)
-app.include_router(users.routers.router)
+app.include_router(category_router)
+app.include_router(product_router)
+app.include_router(review_router)
+app.include_router(user_router)
 
 
 @app.get("/")
