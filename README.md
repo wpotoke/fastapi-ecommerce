@@ -1,1 +1,1 @@
-modular architecture
+layered architecture
