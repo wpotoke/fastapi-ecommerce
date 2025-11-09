@@ -21,8 +21,10 @@ class ProductService:
         self.category_repo = category_repo
         self.user_repo = user_repo
 
-    async def get_all_products(self) -> list[ProductModel]:
-        products_db = await self.product_repo.get_all()
+    async def get_all_products(self, page: int, page_size: int) -> list[ProductModel]:
+        products_db = await self.product_repo.get_all_with_pagination(
+            page=page, page_size=page_size
+        )
         return products_db
 
     async def create(
