@@ -37,3 +37,6 @@ celerybeat.pid
 
 # Misc
 replace-rules.txt
+
+# scripts
+scripts/
