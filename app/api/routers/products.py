@@ -1,7 +1,7 @@
 from typing import Annotated
-from fastapi import APIRouter, Depends, status, Path
+from fastapi import APIRouter, Depends, status, Path, Query
 from pydantic import Field
-from app.schemas.products import ProductCreate, Product
+from app.schemas.products import ProductCreate, Product, ProductList
 
 from app.core.dependencies.services import get_product_service
 from app.services.products import ProductService
@@ -11,11 +11,13 @@ from app.auth.security import get_email_current_user
 router = APIRouter(prefix="/products", tags=["products"])
 
 
-@router.get("/", response_model=list[Product], status_code=status.HTTP_200_OK)
+@router.get("/", response_model=ProductList, status_code=status.HTTP_200_OK)
 async def get_products(
     product_service: Annotated[ProductService, Depends(get_product_service)],
-) -> list[Product]:
-    return await product_service.get_all_products()
+    page: int = Query(1, ge=1),
+    page_size: int = Query(20, ge=1, le=100),
+) -> ProductList:
+    return await product_service.get_all_products(page=page, page_size=page_size)
 
 
 @router.get("/{product_id}", response_model=Product, status_code=status.HTTP_200_OK)
