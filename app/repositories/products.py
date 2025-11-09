@@ -7,6 +7,7 @@ from sqlalchemy import select, update, func
 from app.models.products import Product as ProductModel
 from app.models.users import User as UserModel
 from app.schemas.products import ProductCreate
+from app.core.exceptions import BusinessException
 
 
 class ProductRepository:
@@ -14,25 +15,47 @@ class ProductRepository:
     def __init__(self, db: AsyncSession):
         self.db = db
 
-    async def get_all(self) -> list[ProductModel]:
-        """Возвращает список всех товаров."""
-        result = await self.db.scalars(
-            select(ProductModel).where(ProductModel.is_active == True)
-        )
-        products = result.all()
-        return products
+    async def get_all(
+        self,
+        page: int,
+        page_size: int,
+        category_id: int | None,
+        rating: float | None,
+        min_price: float | None,
+        max_price: float | None,
+        in_stock: bool | None,
+        seller_id: int | None,
+    ) -> dict:
+        """Возвращает список всех товаров с пагинацией и фильтрацией"""
+        if min_price is not None and max_price is not None and min_price > max_price:
+            raise BusinessException(
+                detail="Минимальная цена не может быть больше максимальной"
+            )
 
-    async def get_all_with_pagination(self, page: int, page_size: int) -> dict:
-        """Возвращает список всех товаров с пагинацией"""
+        filters = [ProductModel.is_active == True]
+
+        if category_id is not None:
+            filters.append(ProductModel.category_id == category_id)
+        if rating is not None:
+            filters.append(ProductModel.rating >= rating)
+        if min_price is not None:
+            filters.append(ProductModel.price >= min_price)
+        if max_price is not None:
+            filters.append(ProductModel.price <= max_price)
+        if in_stock is not None:
+            filters.append(
+                ProductModel.stock > 0 if in_stock else ProductModel.stock == 0
+            )
+        if seller_id is not None:
+            filters.append(ProductModel.seller_id == seller_id)
+
         result = await self.db.scalar(
-            select(func.count())
-            .select_from(ProductModel)
-            .where(ProductModel.is_active.is_(True))
+            select(func.count()).select_from(ProductModel).where(*filters)
         )
         total = int(result or 0)
         products_stmt = await self.db.scalars(
             select(ProductModel)
-            .where(ProductModel.is_active == True)
+            .where(*filters)
             .order_by(ProductModel.id.asc())
             .offset((page - 1) * page_size)
             .limit(page_size)
