@@ -18,7 +18,9 @@ class Product(Base):
         Integer, ForeignKey("categories.id"), nullable=False
     )
     rating: Mapped[float] = mapped_column(Numeric(5, 2), default=0.0, nullable=False)
-    seller_id: Mapped[str] = mapped_column(ForeignKey("users.id"), nullable=False)
+    seller_id: Mapped[int] = mapped_column(
+        Integer, ForeignKey("users.id"), nullable=False
+    )
     category: Mapped["Category"] = relationship(
         "Category", back_populates="products"
     )  # ignore
