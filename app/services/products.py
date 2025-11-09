@@ -21,9 +21,26 @@ class ProductService:
         self.category_repo = category_repo
         self.user_repo = user_repo
 
-    async def get_all_products(self, page: int, page_size: int) -> list[ProductModel]:
-        products_db = await self.product_repo.get_all_with_pagination(
-            page=page, page_size=page_size
+    async def get_all_products(
+        self,
+        page: int,
+        page_size: int,
+        category_id: int | None,
+        rating: float | None,
+        min_price: float | None,
+        max_price: float | None,
+        in_stock: bool | None,
+        seller_id: int | None,
+    ) -> list[ProductModel]:
+        products_db = await self.product_repo.get_all(
+            page=page,
+            page_size=page_size,
+            category_id=category_id,
+            rating=rating,
+            min_price=min_price,
+            max_price=max_price,
+            in_stock=in_stock,
+            seller_id=seller_id,
         )
         return products_db
 
