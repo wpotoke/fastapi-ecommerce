@@ -17,7 +17,7 @@ services:
       - ACCESS_TOKEN_EXPIRE_MINUTES=${ACCESS_TOKEN_EXPIRE_MINUTES}
       - REFRESH_TOKEN_EXPIRE_DAYS=${REFRESH_TOKEN_EXPIRE_DAYS}
     depends_on:
-      - redis
+      # - redis
       - db
     volumes:
       - .:/home/fast
@@ -33,47 +33,47 @@ services:
       - POSTGRES_DB=${POSTGRES_DB}
     ports:
       - "5432:5432"
-  redis:
-    image: redis:7.2-alpine
-    container_name: redis
-    ports:
-      - "6379:6379"
-    volumes:
-      - redis_data:/data
-    command: ["redis-server", "--appendonly", "yes"]
-  celery_worker:
-    build:
-      context: .
-      dockerfile: ./app/Dockerfile
-    command: python -m celery -A app.main.celery worker --loglevel=info -P gevent
-    env_file:
-      - .env
-    environment:
-      - REDIS_PORT=${REDIS_PORT}
-      - REDIS_HOST=redis
-    depends_on:
-      - redis
-      - web
-    volumes:
-      - .:/home/fast
-  celery_beat:
-    build:
-      context: .
-      dockerfile: ./app/Dockerfile
-    command: python -m celery -A app.main.celery beat --loglevel=info
-    env_file:
-      - .env
-    environment:
-      - REDIS_PORT=${REDIS_PORT}
-      - REDIS_HOST=redis
-    depends_on:
-      - redis
-      - web
-    volumes:
-      - .:/home/fast
+  # redis:
+  #   image: redis:7.2-alpine
+  #   container_name: redis
+  #   ports:
+  #     - "6379:6379"
+  #   volumes:
+  #     - redis_data:/data
+  #   command: ["redis-server", "--appendonly", "yes"]
+  # celery_worker:
+  #   build:
+  #     context: .
+  #     dockerfile: ./app/Dockerfile
+  #   command: python -m celery -A app.main.celery worker --loglevel=info -P gevent
+  #   env_file:
+  #     - .env
+  #   environment:
+  #     - REDIS_PORT=${REDIS_PORT}
+  #     - REDIS_HOST=redis
+  #   depends_on:
+  #     - redis
+  #     - web
+  #   volumes:
+  #     - .:/home/fast
+  # celery_beat:
+  #   build:
+  #     context: .
+  #     dockerfile: ./app/Dockerfile
+  #   command: python -m celery -A app.main.celery beat --loglevel=info
+  #   env_file:
+  #     - .env
+  #   environment:
+  #     - REDIS_PORT=${REDIS_PORT}
+  #     - REDIS_HOST=redis
+  #   depends_on:
+  #     - redis
+  #     - web
+  #   volumes:
+  #     - .:/home/fast
 
 
 volumes:
   postgres_data:
-  redis_data:
+  # redis_data:
    
