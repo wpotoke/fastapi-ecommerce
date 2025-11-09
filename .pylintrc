@@ -9,7 +9,9 @@ disable =
     too-few-public-methods,
     too-many-arguments,
     too-many-locals,
-    singleton-comparison
+    singleton-comparison,
+    too-many-positional-arguments,
+    R0801
 
 [FORMAT]
 max-line-length=100
