@@ -1,7 +1,8 @@
 # ruff: noqa: E712
+# pylint:disable=not-callable
 from typing import Optional
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select, update
+from sqlalchemy import select, update, func
 
 from app.models.products import Product as ProductModel
 from app.models.users import User as UserModel
@@ -20,6 +21,24 @@ class ProductRepository:
         )
         products = result.all()
         return products
+
+    async def get_all_with_pagination(self, page: int, page_size: int) -> dict:
+        """Возвращает список всех товаров с пагинацией"""
+        result = await self.db.scalar(
+            select(func.count())
+            .select_from(ProductModel)
+            .where(ProductModel.is_active.is_(True))
+        )
+        total = int(result or 0)
+        products_stmt = await self.db.scalars(
+            select(ProductModel)
+            .where(ProductModel.is_active == True)
+            .order_by(ProductModel.id.asc())
+            .offset((page - 1) * page_size)
+            .limit(page_size)
+        )
+        products = products_stmt.all()
+        return {"items": products, "total": total, "page": page, "page_size": page_size}
 
     async def create(
         self,
