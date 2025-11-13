@@ -31,6 +31,7 @@ class ProductService:
         max_price: float | None,
         in_stock: bool | None,
         seller_id: int | None,
+        search: str | None,
     ) -> list[ProductModel]:
         products_db = await self.product_repo.get_all(
             page=page,
@@ -41,6 +42,7 @@ class ProductService:
             max_price=max_price,
             in_stock=in_stock,
             seller_id=seller_id,
+            search=search,
         )
         return products_db
 

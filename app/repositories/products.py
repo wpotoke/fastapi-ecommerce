@@ -2,7 +2,7 @@
 # pylint:disable=not-callable
 from typing import Optional
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select, update, func
+from sqlalchemy import select, update, func, desc
 
 from app.models.products import Product as ProductModel
 from app.models.users import User as UserModel
@@ -25,6 +25,7 @@ class ProductRepository:
         max_price: float | None,
         in_stock: bool | None,
         seller_id: int | None,
+        search: str | None,
     ) -> dict:
         """Возвращает список всех товаров с пагинацией и фильтрацией"""
         if min_price is not None and max_price is not None and min_price > max_price:
@@ -49,19 +50,40 @@ class ProductRepository:
         if seller_id is not None:
             filters.append(ProductModel.seller_id == seller_id)
 
+        rank_col = None
+        if search is not None:
+            search_value = search.strip().lower()
+            if search_value:
+                ts_query = func.websearch_to_tsquery("english", search_value)
+                filters.append(ProductModel.tsv.op("@@")(ts_query))
+                rank_col = func.ts_rank_cd(ProductModel.tsv, ts_query).label("rank")
+
         result = await self.db.scalar(
             select(func.count()).select_from(ProductModel).where(*filters)
         )
         total = int(result or 0)
-        products_stmt = await self.db.scalars(
-            select(ProductModel)
-            .where(*filters)
-            .order_by(ProductModel.id.asc())
-            .offset((page - 1) * page_size)
-            .limit(page_size)
-        )
-        products = products_stmt.all()
-        return {"items": products, "total": total, "page": page, "page_size": page_size}
+
+        if rank_col is not None:
+            products_stmt = (
+                select(ProductModel, rank_col)
+                .where(*filters)
+                .order_by(desc(rank_col), ProductModel.id)
+                .offset((page - 1) * page_size)
+                .limit(page_size)
+            )
+            result = await self.db.execute(products_stmt)
+            rows = result.all()
+            items = [row[0] for row in rows]
+        else:
+            products_stmt = (
+                select(ProductModel)
+                .where(*filters)
+                .order_by(ProductModel.id)
+                .offset((page - 1) * page_size)
+                .limit(page_size)
+            )
+            items = (await self.db.scalars(products_stmt)).all()
+        return {"items": items, "total": total, "page": page, "page_size": page_size}
 
     async def create(
         self,
