@@ -24,6 +24,9 @@ async def get_products(
         None, description="true — только товары в наличии, false — только без остатка"
     ),
     seller_id: int | None = Query(None, description="ID продавца для фильтрации"),
+    search: str | None = Query(
+        None, min_length=1, description="Поиск по названию товара"
+    ),
 ) -> ProductList:
     return await product_service.get_all_products(
         page=page,
@@ -34,6 +37,7 @@ async def get_products(
         max_price=max_price,
         in_stock=in_stock,
         seller_id=seller_id,
+        search=search,
     )
 
 
